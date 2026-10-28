@@ -3,6 +3,7 @@ services:
     name: trabajo-final
     runtime: docker
     plan: free
+    region: ohio
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /up
