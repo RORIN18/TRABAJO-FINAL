@@ -131,7 +131,7 @@
             estudiantesActuales = disponibles.map((estudiante) => ({
                 id: estudiante.id,
                 texto: `${estudiante.apellidos}, ${estudiante.nombres} (${estudiante.codigo})`,
-            });
+            }));
             if (limpiarSiNoDisponible && estudianteSelect.value
                 && !disponibles.some((estudiante) => String(estudiante.id) === String(estudianteSelect.value))) {
                 estudianteSelect.value = '';
