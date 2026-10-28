@@ -5,9 +5,7 @@
 <section class="panel"><form method="POST" action="{{ route('inscripciones.store') }}">@csrf
     <div class="form-grid">
         <div class="field">
-            <label for="buscar_estudiante">Buscar estudiante</label>
-            <input id="buscar_estudiante" class="control" type="search" placeholder="Nombre, apellido o código" autocomplete="off">
-            <label for="estudiante_id" style="margin-top:10px">Estudiante</label>
+            <label for="estudiante_id">Estudiante</label>
             <select id="estudiante_id" name="estudiante_id" class="control" required>
                 <option value="">Selecciona un estudiante</option>
                 @foreach($estudiantes as $estudiante)
@@ -18,9 +16,7 @@
             @error('estudiante_id')<span class="error-text">{{ $message }}</span>@enderror
         </div>
         <div class="field">
-            <label for="buscar_materia">Buscar materia o paralelo</label>
-            <input id="buscar_materia" class="control" type="search" placeholder="Nombre de materia o código de paralelo" autocomplete="off">
-            <label for="paralelo_id" style="margin-top:10px">Materia y paralelo</label>
+            <label for="paralelo_id">Materia y paralelo</label>
             <select id="paralelo_id" name="paralelo_id" class="control" required disabled>
                 <option value="">Selecciona primero un estudiante</option>
             </select>
@@ -31,8 +27,6 @@
     <div class="actions"><button id="registrar_inscripcion" class="button button-primary" type="submit" disabled>Registrar inscripción</button><a href="{{ route('inscripciones.index') }}" class="button button-secondary">Cancelar</a></div>
 </form></section>
 <script>
-    const buscarEstudiante = document.getElementById('buscar_estudiante');
-    const buscarMateria = document.getElementById('buscar_materia');
     const estudianteSelect = document.getElementById('estudiante_id');
     const paraleloSelect = document.getElementById('paralelo_id');
     const disponibilidadEstudiantes = document.getElementById('estudiantes_disponibilidad');
@@ -45,27 +39,19 @@
     let estudiantesActuales = todosLosEstudiantes;
     let paralelosActuales = [];
 
-    function normalizar(texto) {
-        return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    }
-
     function mostrarEstudiantes(seleccion = estudianteSelect.value) {
-        const termino = normalizar(buscarEstudiante.value);
-        const opciones = estudiantesActuales.filter((estudiante) => normalizar(estudiante.texto).includes(termino));
         estudianteSelect.replaceChildren(new Option('Selecciona un estudiante', ''));
-        opciones.forEach((estudiante) => estudianteSelect.add(new Option(estudiante.texto, estudiante.id)));
-        if (opciones.some((estudiante) => String(estudiante.id) === String(seleccion))) estudianteSelect.value = seleccion;
-        if (!opciones.length) estudianteSelect.add(new Option('No se encontraron estudiantes disponibles', ''));
+        estudiantesActuales.forEach((estudiante) => estudianteSelect.add(new Option(estudiante.texto, estudiante.id)));
+        if (estudiantesActuales.some((estudiante) => String(estudiante.id) === String(seleccion))) estudianteSelect.value = seleccion;
+        if (!estudiantesActuales.length) estudianteSelect.add(new Option('No hay estudiantes disponibles', ''));
     }
 
     function mostrarParalelos(seleccion = paraleloSelect.value) {
-        const termino = normalizar(buscarMateria.value);
-        const opciones = paralelosActuales.filter((paralelo) => normalizar(paralelo.texto).includes(termino));
         paraleloSelect.replaceChildren(new Option('Selecciona una materia y paralelo', ''));
-        opciones.forEach((paralelo) => paraleloSelect.add(new Option(paralelo.texto, paralelo.id)));
-        if (opciones.some((paralelo) => String(paralelo.id) === String(seleccion))) paraleloSelect.value = seleccion;
-        if (!opciones.length) paraleloSelect.add(new Option('No se encontraron materias disponibles', ''));
-        paraleloSelect.disabled = opciones.length === 0;
+        paralelosActuales.forEach((paralelo) => paraleloSelect.add(new Option(paralelo.texto, paralelo.id)));
+        if (paralelosActuales.some((paralelo) => String(paralelo.id) === String(seleccion))) paraleloSelect.value = seleccion;
+        if (!paralelosActuales.length) paraleloSelect.add(new Option('No hay materias disponibles', ''));
+        paraleloSelect.disabled = paralelosActuales.length === 0;
         registrarInscripcion.disabled = !paraleloSelect.value || !estudianteSelect.value;
     }
 
@@ -147,20 +133,6 @@
         }
     }
 
-    buscarEstudiante.addEventListener('input', () => {
-        const seleccionado = estudianteSelect.value;
-        mostrarEstudiantes(seleccionado);
-        if (seleccionado && !Array.from(estudianteSelect.options).some((opcion) => opcion.value === seleccionado)) {
-            actualizarParalelos('');
-        }
-    });
-    buscarMateria.addEventListener('input', () => {
-        const seleccionado = paraleloSelect.value;
-        mostrarParalelos(seleccionado);
-        if (seleccionado && !Array.from(paraleloSelect.options).some((opcion) => opcion.value === seleccionado)) {
-            actualizarEstudiantesPorParalelo();
-        }
-    });
     estudianteSelect.addEventListener('change', () => actualizarParalelos());
     paraleloSelect.addEventListener('change', () => actualizarEstudiantesPorParalelo());
     const estudianteInicial = estudianteSelect.value;
