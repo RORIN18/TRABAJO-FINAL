@@ -61,20 +61,62 @@ class InscripcionController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $paralelos = Paralelo::with(['materia', 'docente', 'gestion'])
+        $estudiantes = Estudiante::where('estado', 'activo')
+            ->whereHas('carrera', fn ($query) => $query->where('activa', true))
+            ->orderBy('apellidos')
+            ->orderBy('nombres')
+            ->get(['id', 'codigo', 'nombres', 'apellidos']);
+
+        $estudianteSeleccionado = $estudiantes->firstWhere('id', (int) $request->query('estudiante_id'));
+
+        return view('inscripciones.create', compact('estudiantes', 'estudianteSeleccionado'));
+    }
+
+    public function paralelosDisponibles(Request $request)
+    {
+        $data = $request->validate([
+            'estudiante_id' => ['nullable', Rule::exists('estudiantes', 'id')->where('estado', 'activo')],
+        ]);
+
+        $estudianteId = $data['estudiante_id'] ?? null;
+        $estudiante = ! empty($estudianteId)
+            ? Estudiante::with('carrera')->findOrFail($estudianteId)
+            : null;
+        if ($estudiante && ! $estudiante->carrera?->activa) {
+            return response()->json([]);
+        }
+
+        $inscripciones = $estudiante
+            ? Inscripcion::with(['paralelo', 'notas'])
+                ->where('estudiante_id', $estudiante->id)
+                ->where('estado', '!=', 'no_inscrito')
+                ->get()
+            : collect();
+
+        $paralelos = Paralelo::with(['materia.prerrequisitos', 'docente', 'gestion'])
             ->withCount(['inscripciones as inscritos_count' => fn ($query) => $query->where('estado', '!=', 'no_inscrito')])
             ->where('activo', true)
             ->whereHas('materia', fn ($query) => $query->where('activa', true)
+                ->when($estudiante, fn ($materias) => $materias->where('carrera_id', $estudiante->carrera_id))
                 ->whereHas('carrera', fn ($career) => $career->where('activa', true)))
             ->whereHas('gestion', fn ($query) => $query->where('vigente', true))
             ->get()
-            ->filter(fn (Paralelo $paralelo) => $paralelo->inscritos_count < $paralelo->cupo)
+            ->filter(fn (Paralelo $paralelo) => $paralelo->inscritos_count < $paralelo->cupo
+                && (! $estudiante || $this->estudianteDisponibleParaParalelo($paralelo, $inscripciones)))
             ->sortBy(fn (Paralelo $paralelo) => mb_strtolower(($paralelo->materia?->nombre ?? '').' '.$paralelo->codigo))
+            ->map(fn (Paralelo $paralelo) => [
+                'id' => $paralelo->id,
+                'materia' => $paralelo->materia?->nombre,
+                'codigo' => $paralelo->codigo,
+                'docente' => trim(($paralelo->docente?->nombres ?? '').' '.($paralelo->docente?->apellidos ?? '')),
+                'horario' => $paralelo->horario,
+                'cupos_libres' => max(0, $paralelo->cupo - $paralelo->inscritos_count),
+            ])
             ->values();
 
-        return view('inscripciones.create', compact('paralelos'));
+        return response()->json($paralelos);
     }
 
     public function estudiantesDisponibles(Request $request)

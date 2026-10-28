@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/inscripciones/create', [InscripcionController::class, 'create'])->middleware('is_admin')->name('inscripciones.create');
     Route::get('/inscripciones/estudiantes-disponibles', [InscripcionController::class, 'estudiantesDisponibles'])->middleware('is_admin')->name('inscripciones.estudiantes-disponibles');
+    Route::get('/inscripciones/paralelos-disponibles', [InscripcionController::class, 'paralelosDisponibles'])->middleware('is_admin')->name('inscripciones.paralelos-disponibles');
     Route::get('/inscripciones', [InscripcionController::class, 'index'])->name('inscripciones.index');
     Route::get('/inscripciones/{inscripcion}', [InscripcionController::class, 'show'])->name('inscripciones.show');
 
