@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\{Estudiante, Inscripcion, Paralelo};
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,33 @@ class InscripcionController extends Controller
 {
     public function index(Request $request)
     {
+        if ($request->input('estado') === 'no_inscrito') {
+            $estudiantes = Estudiante::query()
+                ->where('estado', 'activo')
+                ->whereDoesntHave('inscripciones', fn ($query) => $query->where('estado', '!=', 'no_inscrito'))
+                ->when($request->filled('q'), function ($query) use ($request) {
+                    $termino = $request->input('q');
+                    $query->where(function ($estudiantes) use ($termino) {
+                        $estudiantes->where('nombres', 'like', '%' . $termino . '%')
+                            ->orWhere('apellidos', 'like', '%' . $termino . '%')
+                            ->orWhere('codigo', 'like', '%' . $termino . '%');
+                    });
+                })
+                ->orderBy('apellidos')
+                ->orderBy('nombres')
+                ->paginate(15)
+                ->withQueryString();
+
+            if ($request->wantsJson()) {
+                return $estudiantes;
+            }
+
+            return view('inscripciones.index', [
+                'inscripciones' => $estudiantes,
+                'mostrandoEstudiantesSinInscripcion' => true,
+            ]);
+        }
+
         $q = Inscripcion::with('estudiante', 'paralelo.materia');
         if ($request->filled('estado')) {
             $q->where('estado', $request->estado);
@@ -27,7 +55,10 @@ class InscripcionController extends Controller
             return $inscripciones;
         }
 
-        return view('inscripciones.index', compact('inscripciones'));
+        return view('inscripciones.index', [
+            'inscripciones' => $inscripciones,
+            'mostrandoEstudiantesSinInscripcion' => false,
+        ]);
     }
 
     public function create()
