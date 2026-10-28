@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title', 'Carreras')
+@section('content')
+<div class="page-header"><div class="page-heading"><p class="eyebrow">Oferta académica</p><h1 class="page-title">Carreras</h1><p class="page-subtitle">Explora los programas y consulta sus materias.</p></div>@if(auth()->user()->role === 'admin')<a href="/carreras/create" class="button button-primary">＋ Nueva carrera</a>@endif</div>
+<section class="panel">
+    <div class="toolbar"><form method="GET" action="/carreras"><input name="q" value="{{ request('q') }}" class="control" placeholder="Buscar por nombre o código"><select name="activa" class="control" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="1" {{ request('activa') === '1' ? 'selected' : '' }}>Activas</option><option value="0" {{ request('activa') === '0' ? 'selected' : '' }}>Inactivas</option></select><button class="button button-secondary" type="submit">Buscar</button></form></div>
+    @if($carreras->count())<div class="table-wrap"><table class="data-table"><thead><tr><th>Programa</th><th>Código</th><th>Materias</th><th>Estado</th><th></th></tr></thead><tbody>@foreach($carreras as $c)<tr><td><div class="table-person"><img class="avatar" src="{{ $c->imagen_url }}" alt=""><span>{{ $c->nombre }}</span></div></td><td class="mono">{{ $c->codigo }}</td><td>{{ $c->materias_count }}</td><td><span class="badge {{ $c->activa ? 'badge-success' : '' }}">{{ $c->activa ? 'Activa' : 'Inactiva' }}</span></td><td><div class="actions"><a href="/carreras/{{ $c->id }}" class="button button-secondary button-small">Ver</a>@if(auth()->user()->role === 'admin')<a href="/carreras/{{ $c->id }}/edit" class="button button-quiet button-small">Editar</a>@endif</div></td></tr>@endforeach</tbody></table></div>@else<div class="empty-state"><span class="empty-mark">C</span><h3>No se encontraron carreras</h3><p>Prueba con otra búsqueda o cambia el filtro.</p></div>@endif
+    <div class="pagination-wrap">{{ $carreras->links() }}</div>
+</section>
+@endsection

@@ -1,0 +1,10 @@
+@extends('layouts.app')
+@section('title', 'Inscripciones')
+@section('content')
+<div class="page-header"><div class="page-heading"><p class="eyebrow">Seguimiento académico</p><h1 class="page-title">Inscripciones</h1><p class="page-subtitle">Consulta estudiantes inscritos, su estado y fecha de registro.</p></div>@if(auth()->user()->role === 'admin')<a href="/inscripciones/create" class="button button-primary">＋ Nueva inscripción</a>@endif</div>
+<section class="panel">
+    <div class="toolbar"><form method="GET" action="/inscripciones"><input name="q" value="{{ request('q') }}" class="control" placeholder="Buscar estudiante"><input name="fecha" type="date" class="control" value="{{ request('fecha') }}" aria-label="Fecha de inscripción"><select name="estado" class="control" aria-label="Estado"><option value="">Todos los estados</option><option value="inscrito" {{ request('estado') === 'inscrito' ? 'selected' : '' }}>Inscrito</option><option value="no_inscrito" {{ request('estado') === 'no_inscrito' ? 'selected' : '' }}>No inscrito</option></select><button class="button button-secondary" type="submit">Filtrar</button></form></div>
+    @if($inscripciones->count())<div class="table-wrap"><table class="data-table"><thead><tr><th>Estudiante</th><th>Paralelo</th><th>Estado</th><th>Fecha</th><th></th></tr></thead><tbody>@foreach($inscripciones as $i)<tr><td>{{ $i->estudiante->nombres ?? '' }} {{ $i->estudiante->apellidos ?? '' }}</td><td>{{ $i->paralelo->codigo ?? '—' }}</td><td><span class="badge {{ $i->estado === 'inscrito' ? 'badge-success' : 'badge-warn' }}">{{ ucfirst(str_replace('_', ' ', $i->estado)) }}</span></td><td>{{ $i->fecha_inscripcion }}</td><td><a href="/inscripciones/{{ $i->id }}" class="button button-secondary button-small">Ver detalle</a></td></tr>@endforeach</tbody></table></div>@else<div class="empty-state"><span class="empty-mark">I</span><h3>No se encontraron inscripciones</h3><p>Prueba con otros filtros o registra una nueva inscripción.</p></div>@endif
+    <div class="pagination-wrap">{{ $inscripciones->links() }}</div>
+</section>
+@endsection
